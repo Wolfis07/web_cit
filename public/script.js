@@ -7,14 +7,14 @@ async function loadPosts() {
         const response = await fetch('/api/posts');
         
         if (!response.ok) {
-            throw new Error('Chyba při načítání příspěvků');
+            throw new Error('Chyba při načítání článků');
         }
         
         const posts = await response.json();
         displayPosts(posts);
     } catch (error) {
         console.error('Error:', error);
-        displayError('Nepodařilo se načíst příspěvky');
+        displayError('Nepodařilo se načíst články z databáze');
     }
 }
 
@@ -22,15 +22,35 @@ function displayPosts(posts) {
     const container = document.getElementById('posts-container');
     
     if (posts.length === 0) {
-        container.innerHTML = '<div class="post">Žádné příspěvky k zobrazení</div>';
+        container.innerHTML = '<div class="post">Žádné články k zobrazení</div>';
         return;
     }
     
+    // Seřadit články od nejnovějšího
+    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
     container.innerHTML = posts.map(post => `
         <div class="post">
+            <div class="post-meta">
+                <span class="author">${escapeHtml(post.author || 'Redakce iDnes')}</span>
+                <span class="date">${formatDate(post.date)}</span>
+                <span class="category">${escapeHtml(post.category || 'zprávy')}</span>
+            </div>
+            
             <h2>${escapeHtml(post.title || 'Bez názvu')}</h2>
-            <div class="date">${formatDate(post.date || post.createdAt)}</div>
-            <div class="content">${escapeHtml(post.content || post.text || 'Žádný obsah')}</div>
+            
+            <div class="content">${escapeHtml(post.content || 'Žádný obsah')}</div>
+            
+            <div class="post-stats">
+                <span>👁️ ${post.views || 0} zhlédnutí</span>
+                <span>💬 ${post.comments || 0} komentářů</span>
+            </div>
+            
+            ${post.tags && post.tags.length > 0 ? `
+                <div class="tags">
+                    ${post.tags.map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
+                </div>
+            ` : ''}
         </div>
     `).join('');
 }
